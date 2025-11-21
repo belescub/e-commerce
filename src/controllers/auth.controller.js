@@ -8,7 +8,6 @@ import { createAccessToken } from '../libs/jwt.js';
 
 // registro de usuario
 
-
 // función de controlador para el registro de nuevos usuarios (ruta POST /register).
 export const register = async (req, res) => {
     // desestructura los datos necesarios del cuerpo de la solicitud (req.body).
@@ -43,10 +42,7 @@ export const register = async (req, res) => {
     }
 };
 
-
-
 // inicio de sesión
-
 
 // función de controlador para el inicio de sesión de usuarios existentes (ruta post /login)
 export const login = async (req, res) => {
@@ -80,8 +76,6 @@ export const login = async (req, res) => {
     }
 };
 
-
-
 // perfil de usuario
 
 // función de controlador para obtener los datos del perfil del usuario autenticado (ruta get /profile)
@@ -99,10 +93,7 @@ export const profile = async (req, res) => {
     });
 };
 
-
-
 // para el cierre de sesión
-
 
 // función de controlador para cerrar la sesión (ruta post /logout)
 export const logout = (req, res) => {
@@ -112,10 +103,7 @@ export const logout = (req, res) => {
     return res.sendStatus(200);
 };
 
-
-
 // actualizar usuario
-
 
 // función de controlador para modificar la información del usuario autenticado (ruta put /update)
 export const updateUser = async (req, res) => {
@@ -144,10 +132,7 @@ export const updateUser = async (req, res) => {
     }
 };
 
-
-
 // eliminar usuario
-
 
 // función de controlador para eliminar la cuenta del usuario autenticado (ruta DELETE /delete)
 export const deleteUser = async (req, res) => {

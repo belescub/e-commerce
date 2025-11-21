@@ -4,7 +4,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import cartRoutes from "./routes/cart.routes.js";
 import cookieParser from 'cookie-parser'; // para que express lea las cookies
-import productRoutes from "./routes/productRoutes.js";
+import productRoutes from "./routes/product.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
