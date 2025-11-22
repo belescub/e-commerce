@@ -19,6 +19,6 @@ router.post("/logout", logout);             // es para que el usuario se desloge
 
 // esto es editar y eliminar usuarios
 
-router.put("/user", authRequired, updateUser);   // es para editar el usuario que se autentico
-router.delete("/user", authRequired, isAdmin, deleteUser); // solo un admin puede eliminar usuarios
+router.put("/user/:id", authRequired, isAdmin, updateUser);   // es para editar el usuario que se autentico
+router.delete("/user/:id", authRequired, isAdmin, deleteUser); // solo un admin puede eliminar usuarios
 export default router;

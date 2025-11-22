@@ -105,49 +105,53 @@ export const logout = (req, res) => {
 
 // actualizar usuario
 
-// función de controlador para modificar la información del usuario autenticado (ruta put /update)
+// función de controlador para modificar la información del usuario autenticado (ruta PUT)
 export const updateUser = async (req, res) => {
     try {
-        // desestructura los posibles campos a actualizar
-        const { username, email, password } = req.body;
-
-        // inicializa un objeto con los datos a actualizar (username y email)
-        const updatedData = { username, email };
-        // si se proporciona una nueva contraseña, la cifra antes de agregarla a los datos de actualización
+        const { id } = req.params; // tomo el ID desde la URL
+        const { username, email, password, role } = req.body;
+        const updatedData = { username, email, role };
+        // si viene password nueva, la hasheo
         if (password) {
             updatedData.password = await bcrypt.hash(password, 10);
         }
-
-        // busca y actualiza el usuario en la base de datos usando el ID de 'req.user'
-        // { new: true } asegura que 'user' contenga el documento actualizado y no el antiguo
-        const user = await User.findByIdAndUpdate(req.user.id, updatedData, { new: true });
-        // si el usuario no se encuentra (404 Not Found)
-        if (!user) return res.status(404).json({ message: "usuario no encontrado" });
-
-        // responde con un mensaje de éxito y los datos del usuario actualizado
-        res.json({ message: "usuario actualizado correctamente", user });
+        const user = await User.findByIdAndUpdate(id, updatedData, { new: true }).select("-password");
+        if (!user) {
+            return res.status(404).json({ message: "usuario no encontrado" });
+        }
+        res.json({
+            message: "usuario actualizado correctamente",
+            user
+        });
     } catch (error) {
-        // manejo de errores de actualización.
-        res.status(500).json({ message: "error al actualizar usuario", error: error.message });
+        res.status(500).json({
+            message: "error al actualizar usuario",
+            error: error.message
+        });
     }
 };
 
 // eliminar usuario
 
-// función de controlador para eliminar la cuenta del usuario autenticado (ruta DELETE /delete)
+// función de controlador para eliminar la cuenta del usuario autenticado (ruta DELETE)
+// eliminar usuario (solo admin)
+
 export const deleteUser = async (req, res) => {
     try {
-        // busca y elimina el usuario en la base de datos por el ID de 'req.user'
-        const user = await User.findByIdAndDelete(req.user.id);
-        // si no se encuentra el usuario, devuelve 404.
-        if (!user) return res.status(404).json({ message: "usuario no encontrado" });
-
-        // borra la cookie del token para cerrar la sesión inmediatamente
-        res.clearCookie("token");
-        // responde con un mensaje de éxito
+        const { id } = req.params;
+        // esto evita que un admin se borre a sí mismo
+        if (id === req.user.id) {
+            return res.status(400).json({ message: "No puedes eliminar tu propia cuenta" });
+        }
+        const user = await User.findByIdAndDelete(id);
+        if (!user) {
+            return res.status(404).json({ message: "usuario no encontrado" });
+        }
         res.json({ message: "usuario eliminado correctamente" });
     } catch (error) {
-        // manejo de errores de eliminación
-        res.status(500).json({ message: "error al eliminar usuario", error: error.message });
+        res.status(500).json({
+            message: "error al eliminar usuario",
+            error: error.message,
+        });
     }
 };

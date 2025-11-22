@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authRequired } from "../middlewares/validateToken.js";
-import { getProducts, getProduct, createProduct, updateProduct, deleteProduct, } from "../controllers/productController.js";
+import { getProducts, getProduct, createProduct, updateProduct, deleteProduct, } from "../controllers/product.controller.js";
 
 const router = Router();
 
