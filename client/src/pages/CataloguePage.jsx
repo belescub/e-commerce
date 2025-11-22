@@ -1,132 +1,191 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-// Importaciones de Bootstrap
-import { Container, Row, Col, Card, Button, Spinner, Form, InputGroup, Alert } from 'react-bootstrap'; 
+import { useCart } from '../context/useCart';
+import { useAuth } from '../context/useAuth';
+import '../styles/CataloguePage.css';
 
 const API_URL = 'http://localhost:3000/api'; 
 
+function ProductCard({ product }) {
+  const { isAuthenticated } = useAuth();
+  const { handleIncreaseQuantity } = useCart();
+  const [quantity, setQuantity] = useState(1);
+
+  const handleAddToCartClick = () => {
+    if (!isAuthenticated) {
+      alert("Debes iniciar sesión para añadir productos al carrito.");
+      return;
+    }
+    handleIncreaseQuantity(product._id, quantity);
+    alert(`¡${quantity}x ${product.name} añadido al carrito!`);
+  };
+
+  return (
+    <div className="card h-100 shadow-sm product-card">
+      <img 
+        src={product.image || '/images/placeholder.jpg'} 
+        className="card-img-top"
+        alt={product.name}
+        style={{ height: '250px', objectFit: 'cover' }}
+      />
+      <div className="card-body d-flex flex-column">
+        <h5 className="card-title">{product.name}</h5>
+        <p className="card-text flex-grow-1 text-muted">
+          {product.description}
+        </p>
+        <div className="mt-auto">
+          <p className="card-text fw-bold text-primary fs-5 mb-2">
+            ${product.price}
+          </p>
+          <p className={`small mb-3 ${product.stock === 0 ? 'text-danger' : 'text-success'}`}>
+            {product.stock === 0 ? 'Sin Stock' : `Stock: ${product.stock}`}
+          </p>
+          
+          {/* Selector de cantidad - solo muestra si hay stock */}
+          {product.stock > 0 && (
+            <div className="quantity-selector mb-3">
+              <label htmlFor={`quantity-${product._id}`} className="form-label small fw-bold">
+                Cantidad:
+              </label>
+              <input
+                type="number"
+                id={`quantity-${product._id}`}
+                min="1"
+                max={product.stock}
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                className="form-control form-control-sm"
+                style={{ width: '80px' }}
+              />
+            </div>
+          )}
+
+          <div className="d-grid gap-2">
+            <Link 
+              to={`/products/${product._id}`} 
+              className="btn btn-outline-secondary"
+            >
+              Ver Detalles
+            </Link>
+            
+            {/* Botón Añadir al Carrito */}
+            <button
+              className="btn btn-primary"
+              onClick={handleAddToCartClick}
+              disabled={product.stock === 0}
+            >
+              Añadir al Carrito
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CataloguePage() {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState(''); // Estado para la búsqueda
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        async function loadProducts() {
-            try {
-                const response = await axios.get(`${API_URL}/products`); 
-                let productArray = [];
-                if (Array.isArray(response.data)) {
-                    productArray = response.data;
-                } else if (response.data && Array.isArray(response.data.products)) {
-                    productArray = response.data.products;
-                }
-                setProducts(productArray);
-                setLoading(false);
-            } catch (err) {
-                console.error("Error al cargar productos:", err);
-                setError("Error al obtener los datos de productos. Por favor, intenta más tarde.");
-                setLoading(false);
-            }
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const response = await axios.get(`${API_URL}/products`); 
+        let productArray = [];
+        if (Array.isArray(response.data)) {
+          productArray = response.data;
+        } else if (response.data && Array.isArray(response.data.products)) {
+          productArray = response.data.products;
         }
-        loadProducts();
-    }, []);
-
-    // 1. Lógica de Búsqueda y Filtrado (se ejecuta solo cuando 'products' o 'searchTerm' cambian)
-    const filteredProducts = useMemo(() => {
-        if (!searchTerm) return products;
-        
-        const lowerCaseSearch = searchTerm.toLowerCase();
-        
-        return products.filter(product =>
-            product.name.toLowerCase().includes(lowerCaseSearch) ||
-            product.description.toLowerCase().includes(lowerCaseSearch)
-        );
-    }, [products, searchTerm]);
-
-
-    // === Estados de Carga y Error ===
-    if (loading) {
-        return <h2 className="text-center mt-5"><Spinner animation="border" /> Cargando Catálogo...</h2>;
+        setProducts(productArray);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error al cargar productos:", err);
+        setError("Error al obtener los datos de productos. Por favor, intenta más tarde.");
+        setLoading(false);
+      }
     }
+    loadProducts();
+  }, []);
 
-    if (error) {
-        return <h2 className="text-center mt-5 text-danger">{error}</h2>;
-    }
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm) return products;
     
-    // Si no hay productos en la BD después de cargar
-    if (products.length === 0) {
-        return <h2 className="text-center mt-5 text-secondary">No hay productos disponibles en la tienda.</h2>;
-    }
-
-
-    // === Renderizado del Componente ===
-    return (
-        <Container className="my-5"> 
-            <h1 className="text-center mb-4">🛍️ Catálogo Completo</h1>
-            
-            {/* Campo de Búsqueda */}
-            <Row className="mb-4 justify-content-center">
-                <Col md={6}>
-                    <InputGroup>
-                        <Form.Control
-                            type="text"
-                            placeholder="Buscar por nombre o descripción..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <Button variant="outline-primary">Buscar</Button>
-                    </InputGroup>
-                </Col>
-            </Row>
-
-            {/* Resultado de la Búsqueda */}
-            {filteredProducts.length === 0 && searchTerm && (
-                <Alert variant="info" className="text-center">
-                    No se encontraron productos para "{searchTerm}".
-                </Alert>
-            )}
-            
-            {/* Grid de Productos Filtrados */}
-            <Row xs={1} md={2} lg={4} className="g-4"> 
-                {filteredProducts.map(product => (
-                    <Col key={product._id}>
-                        <Card className="h-100 shadow-sm">
-                            <Card.Body className="d-flex flex-column">
-                                <Card.Title>{product.name}</Card.Title>
-                                <Card.Text className="text-muted small">
-                                    {product.description.substring(0, 70)}...
-                                </Card.Text>
-                                
-                                <h4 className="mt-auto mb-2 text-primary">
-                                    ${product.price.toFixed(2)}
-                                </h4>
-                                <p className="small text-danger">Stock: {product.stock}</p>
-                                
-                                <div className="d-grid gap-2">
-                                    <Button 
-                                        as={Link} 
-                                        to={`/products/${product._id}`} 
-                                        variant="outline-secondary"
-                                    >
-                                        Ver Detalles
-                                    </Button>
-                                    <Button 
-                                        variant="success"
-                                        // onClick={() => addToCart(product._id, 1)} 
-                                        disabled={product.stock === 0}
-                                    >
-                                        {product.stock === 0 ? 'Sin Stock' : 'Añadir al Carrito'}
-                                    </Button>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                ))}
-            </Row>
-        </Container>
+    const lowerCaseSearch = searchTerm.toLowerCase();
+    
+    return products.filter(product =>
+      product.name.toLowerCase().includes(lowerCaseSearch) ||
+      (product.description && product.description.toLowerCase().includes(lowerCaseSearch))
     );
+  }, [products, searchTerm]);
+
+  if (loading) {
+    return <h2 className="text-center mt-5"> Cargando Catálogo...</h2>;
+  }
+
+  if (error) {
+    return <h2 className="text-center mt-5 text-danger">{error}</h2>;
+  }
+  
+  if (products.length === 0) {
+    return <h2 className="text-center mt-5 text-secondary">No hay productos disponibles en la tienda.</h2>;
+  }
+
+  return (
+    <div className="catalogue-page">
+      <div className="container mt-5" style={{ paddingTop: '50px' }}>
+        
+        <h1 className="text-center mb-4"> Catálogo Completo </h1>
+        
+        {/* Barra de búsqueda */}
+        <div className="row mb-4 justify-content-center">
+          <div className="col-md-6">
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar por nombre o descripción..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button className="btn btn-outline-primary" type="button">
+                 Buscar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mensaje de resultados de búsqueda */}
+        {filteredProducts.length === 0 && searchTerm && (
+          <div className="alert alert-info text-center">
+            No se encontraron productos para "<strong>{searchTerm}</strong>".
+          </div>
+        )}
+
+        {/* Contador de productos */}
+        <div className="row mb-3">
+          <div className="col">
+            <p className="text-muted">
+              Mostrando <strong>{filteredProducts.length}</strong> de <strong>{products.length}</strong> productos
+              {searchTerm && <span> para "<strong>{searchTerm}</strong>"</span>}
+            </p>
+          </div>
+        </div>
+
+        {/* Grid de productos */}
+        <div className="row">
+          {filteredProducts.map((product) => (
+            <div key={product._id} className="col-lg-4 col-md-6 mb-4">
+              <ProductCard product={product} /> 
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default CataloguePage;
